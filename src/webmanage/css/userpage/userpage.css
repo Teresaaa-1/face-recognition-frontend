@@ -1,0 +1,260 @@
+.users-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+h2 {
+  color: #333;
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 28px;
+  font-weight: 300;
+}
+
+.permission-warning {
+  text-align: center;
+  margin: 50px 0;
+  padding: 30px;
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 8px;
+  color: #856404;
+}
+
+.loading {
+  text-align: center;
+  margin: 60px 0;
+}
+
+.loading-spinner {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #007bff;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-message {
+  text-align: center;
+  margin: 50px 0;
+  padding: 30px;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 8px;
+  color: #721c24;
+}
+
+.retry-btn, .login-link {
+  margin: 10px 5px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: all 0.3s ease;
+}
+
+.retry-btn {
+  background-color: #dc3545;
+  color: white;
+}
+
+.retry-btn:hover {
+  background-color: #c82333;
+  transform: translateY(-1px);
+}
+
+.login-link, .register-link {
+  background-color: #007bff;
+  color: white;
+}
+
+.login-link:hover, .register-link:hover {
+  background-color: #0056b3;
+  transform: translateY(-1px);
+}
+
+.no-users {
+  text-align: center;
+  margin: 60px 0;
+  padding: 40px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.users-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 25px;
+  margin: 40px 0;
+}
+
+.user-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 25px;
+  background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.user-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #007bff, #28a745);
+}
+
+.user-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.user-info h3 {
+  color: #007bff;
+  margin: 0 0 20px 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.user-info p {
+  margin: 10px 0;
+  color: #555;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.user-info p strong {
+  color: #333;
+  font-weight: 600;
+}
+
+.status-active {
+  color: #28a745;
+  font-weight: bold;
+  padding: 2px 8px;
+  background-color: #d4edda;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.status-inactive {
+  color: #dc3545;
+  font-weight: bold;
+  padding: 2px 8px;
+  background-color: #f8d7da;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.register-time {
+  color: #6c757d;
+  font-size: 13px;
+  border-top: 1px solid #eee;
+  padding-top: 15px;
+  margin-top: 15px;
+}
+
+.actions {
+  text-align: center;
+  margin: 50px 0;
+  padding: 30px 0;
+  border-top: 1px solid #eee;
+}
+
+.refresh-btn, .back-link {
+  padding: 12px 30px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0 10px;
+  text-decoration: none;
+  display: inline-block;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.refresh-btn {
+  background-color: #28a745;
+  color: white;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  background-color: #218838;
+  transform: translateY(-2px);
+}
+
+.refresh-btn:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.back-link {
+  background-color: #6c757d;
+  color: white;
+}
+
+.back-link:hover {
+  background-color: #545b62;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .users-container {
+    padding: 15px;
+  }
+  
+  .users-list {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .user-card {
+    padding: 20px;
+  }
+  
+  .actions {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .refresh-btn, .back-link {
+    margin: 0;
+  }
+  
+  h2 {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .users-container {
+    padding: 10px;
+  }
+  
+  .user-card {
+    padding: 15px;
+  }
+  
+  .user-info h3 {
+    font-size: 18px;
+  }
+}

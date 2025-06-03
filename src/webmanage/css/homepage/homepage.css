@@ -1,0 +1,459 @@
+.home-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* 用户状态卡片 */
+.user-status {
+  margin-bottom: 30px;
+}
+
+.status-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 15px;
+  padding: 25px;
+  color: white;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.user-avatar {
+  flex-shrink: 0;
+}
+
+.user-icon {
+  font-size: 48px;
+  display: block;
+  background: rgba(255, 255, 255, 0.2);
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-info {
+  flex: 1;
+}
+
+.user-info h3 {
+  margin: 0 0 10px 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.user-details {
+  margin: 8px 0;
+  opacity: 0.9;
+}
+
+.user-details span {
+  margin-right: 20px;
+  font-size: 14px;
+}
+
+.user-role {
+  margin: 10px 0;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.role-badge {
+  padding: 4px 12px;
+  border-radius: 15px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.role-badge.super-admin {
+  background: #ff6b6b;
+}
+
+.role-badge.admin {
+  background: #feca57;
+  color: #333;
+}
+
+.role-badge.advanced {
+  background: #48dbfb;
+  color: #333;
+}
+
+.role-badge.normal {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.access-level {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.login-time {
+  margin: 8px 0 0 0;
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+.user-actions {
+  flex-shrink: 0;
+}
+
+.logout-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.logout-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+/* 主标题 */
+.main-header {
+  text-align: center;
+  margin: 40px 0;
+}
+
+.main-header h2 {
+  color: #333;
+  font-size: 32px;
+  font-weight: 300;
+  margin-bottom: 10px;
+}
+
+.main-header p {
+  color: #666;
+  font-size: 16px;
+}
+
+/* 菜单网格 */
+.menu-container {
+  margin: 40px 0;
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 25px;
+}
+
+.menu-item {
+  display: block;
+  padding: 30px 25px;
+  border-radius: 15px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.menu-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+}
+
+.menu-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+.menu-icon {
+  font-size: 48px;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.menu-item h3 {
+  color: #333;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 15px 0 10px 0;
+  text-align: center;
+}
+
+.menu-item p {
+  color: #666;
+  font-size: 14px;
+  text-align: center;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* 不同菜单项的颜色主题 */
+.menu-item.register {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.menu-item.register::before {
+  background: #5a67d8;
+}
+
+.menu-item.register h3,
+.menu-item.register p {
+  color: white;
+}
+
+.menu-item.login {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+}
+
+.menu-item.login::before {
+  background: #e53e3e;
+}
+
+.menu-item.login h3,
+.menu-item.login p {
+  color: white;
+}
+
+.menu-item.records {
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  color: white;
+}
+
+.menu-item.records::before {
+  background: #10b981;
+}
+
+.menu-item.records h3,
+.menu-item.records p {
+  color: white;
+}
+
+.menu-item.users {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  color: white;
+  position: relative;
+}
+
+.menu-item.users::before {
+  background: #f59e0b;
+}
+
+.menu-item.users h3,
+.menu-item.users p {
+  color: white;
+}
+
+.admin-badge {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.menu-item.profile {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+  color: #333;
+}
+
+.menu-item.profile::before {
+  background: #06b6d4;
+}
+
+/* 系统状态 */
+.system-status {
+  margin: 40px 0;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-label {
+  color: #666;
+  font-size: 14px;
+}
+
+.status-value {
+  color: #333;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.status-value.online {
+  color: #28a745;
+}
+
+/* 加载和错误状态 */
+.loading {
+  text-align: center;
+  margin: 60px 0;
+}
+
+.loading-spinner {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #007bff;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-message {
+  text-align: center;
+  margin: 40px 0;
+  padding: 20px;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 8px;
+  color: #721c24;
+}
+
+.retry-btn {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background-color 0.3s;
+}
+
+.retry-btn:hover {
+  background-color: #c82333;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .home-container {
+    padding: 15px;
+  }
+  
+  .status-card {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .user-info h3 {
+    font-size: 20px;
+  }
+  
+  .menu-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .system-status {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .main-header h2 {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-container {
+    padding: 10px;
+  }
+  
+  .status-card {
+    padding: 20px;
+  }
+  
+  .menu-item {
+    padding: 25px 20px;
+  }
+  
+  .menu-icon {
+    font-size: 36px;
+  }
+  
+  .menu-item h3 {
+    font-size: 18px;
+  }
+
+    /* 为密码登录菜单项添加特殊样式 */
+  .menu-item.password-login {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    color: white;
+    border: none;
+  }
+
+  .menu-item.password-login:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(79, 70, 229, 0.3);
+  }
+
+  .menu-item.password-login .menu-icon {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 15px;
+    font-size: 24px;
+  }
+
+  .menu-item.password-login h3 {
+    color: white;
+    margin: 15px 0 8px 0;
+  }
+
+  .menu-item.password-login p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 14px;
+  }
+
+  /* 调整菜单网格，支持3个项目的布局 */
+  .menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  /* 响应式调整 */
+  @media (max-width: 768px) {
+    .menu-grid {
+      grid-template-columns: 1fr;
+      max-width: 400px;
+    }
+  }
+
+  @media (min-width: 769px) and (max-width: 1024px) {
+    .menu-grid {
+      grid-template-columns: repeat(2, 1fr);
+      max-width: 600px;
+    }
+  }
+}

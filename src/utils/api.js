@@ -142,7 +142,7 @@ export const authAPI = {
   async login(username, password) {
     try {
       console.log('执行登录请求');
-      const response = await apiClient.post('/api/auth/login', { username, password });
+      const response = await apiClient.post('/api/login', { username, password });
       
       // 登录成功后保存token
       if (response.data && (response.data.success || response.data.token || response.data.access_token)) {

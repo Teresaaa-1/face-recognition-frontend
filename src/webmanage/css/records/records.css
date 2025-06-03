@@ -1,0 +1,440 @@
+.records-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+}
+
+.page-header {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.page-header h1 {
+  margin: 0;
+  color: #333;
+  font-size: 28px;
+}
+
+.user-info span {
+  color: #666;
+  font-size: 16px;
+}
+
+.filter-section {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-item label {
+  font-weight: bold;
+  color: #333;
+}
+
+.date-input, .limit-select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.refresh-btn {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.refresh-btn:hover {
+  background-color: #0056b3;
+}
+
+.loading {
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-message {
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  border-left: 4px solid #dc3545;
+}
+
+.error-icon {
+  font-size: 48px;
+  margin-bottom: 20px;
+}
+
+.retry-btn {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 20px;
+}
+
+.retry-btn:hover {
+  background-color: #c82333;
+}
+
+.records-summary {
+  background: white;
+  padding: 15px 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.records-summary p {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+}
+
+/* 新的小卡片网格布局 */
+.records-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.record-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+  transition: all 0.3s ease;
+  border-left: 4px solid #007bff;
+  position: relative;
+  overflow: hidden;
+}
+
+.record-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.card-check-in {
+  border-left-color: #28a745;
+  background: linear-gradient(135deg, rgba(40, 167, 69, 0.02) 0%, rgba(255, 255, 255, 1) 100%);
+}
+
+.card-check-out {
+  border-left-color: #ffc107;
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.02) 0%, rgba(255, 255, 255, 1) 100%);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.type-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.type-check-in {
+  background: rgba(40, 167, 69, 0.1);
+  color: #28a745;
+}
+
+.type-check-out {
+  background: rgba(255, 193, 7, 0.1);
+  color: #ffc107;
+}
+
+.type-icon {
+  font-size: 14px;
+}
+
+.status-indicator {
+  font-size: 16px;
+}
+
+.card-time {
+  text-align: center;
+  margin-bottom: 16px;
+  padding: 8px 0;
+}
+
+.time-main {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 2px;
+}
+
+.date-sub {
+  font-size: 12px;
+  color: #666;
+}
+
+.card-details {
+  margin-bottom: 12px;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.detail-item:last-child {
+  margin-bottom: 0;
+}
+
+.detail-icon {
+  font-size: 12px;
+  width: 16px;
+  text-align: center;
+}
+
+.detail-text {
+  color: #666;
+  flex: 1;
+  word-break: break-all;
+}
+
+.record-id .detail-text {
+  color: #999;
+  font-family: monospace;
+}
+
+.card-status {
+  text-align: center;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+  margin-top: 8px;
+}
+
+.card-status.success {
+  background: rgba(40, 167, 69, 0.1);
+  color: #28a745;
+}
+
+.card-status.pending {
+  background: rgba(255, 193, 7, 0.1);
+  color: #ffc107;
+}
+
+.card-status.failed {
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+}
+
+.card-status.unknown {
+  background: rgba(108, 117, 125, 0.1);
+  color: #6c757d;
+}
+
+.no-records {
+  background: white;
+  padding: 60px 40px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.no-records-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+}
+
+.no-records h3 {
+  color: #333;
+  margin-bottom: 16px;
+}
+
+.no-records p {
+  color: #666;
+  margin-bottom: 30px;
+}
+
+.clock-btn {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s;
+}
+
+.clock-btn:hover {
+  background-color: #1e7e34;
+}
+
+.action-buttons {
+  margin-top: 30px;
+  text-align: center;
+  gap: 15px;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.back-btn, .home-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.back-btn {
+  background-color: #6c757d;
+  color: white;
+}
+
+.back-btn:hover {
+  background-color: #545b62;
+}
+
+.home-btn {
+  background-color: #007bff;
+  color: white;
+}
+
+.home-btn:hover {
+  background-color: #0056b3;
+}
+
+.debug-info {
+  margin-top: 30px;
+  background: white;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.debug-info summary {
+  cursor: pointer;
+  font-weight: bold;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+.debug-content {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+.debug-content p {
+  margin: 5px 0;
+  font-family: monospace;
+  font-size: 12px;
+  color: #495057;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .records-container {
+    padding: 10px;
+  }
+  
+  .page-header {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+  
+  .filter-section {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filter-item {
+    justify-content: space-between;
+  }
+  
+  .records-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .record-card {
+    min-width: unset;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .records-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .record-card {
+    padding: 12px;
+  }
+  
+  .time-main {
+    font-size: 20px;
+  }
+}
