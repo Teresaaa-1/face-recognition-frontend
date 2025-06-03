@@ -52,7 +52,7 @@
   </div>
 </template>
 
-<script>a
+<script>
     import userpage from "../webmanage/js/userpage/userpage";
     export default userpage;
 </script>
