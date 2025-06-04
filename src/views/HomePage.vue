@@ -87,7 +87,7 @@
             <div class="icon-glow"></div>
           </div>
           <div class="menu-content">
-            <h3>人脸识别登录</h3>
+            <h3>人脸识别登录打卡</h3>
             <p>AI技术快速人脸打卡</p>
             <div class="menu-arrow">→</div>
           </div>

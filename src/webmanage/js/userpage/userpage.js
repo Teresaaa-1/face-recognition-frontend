@@ -1,244 +1,827 @@
-import axios from 'axios';
-
+// 修复后的用户管理页面JavaScript逻辑
 export default {
   name: 'UsersPage',
   data() {
     return {
       users: [],
+      filteredUsers: [],
+      userGroups: [],
+      groupsMap: {},
       loading: false,
       error: null,
       isAuthError: false,
       hasPermission: false,
-      userInfo: {}
-    };
+      hasAdminPermission: false,
+      currentUserId: null,
+
+      // 数据加载状态
+      groupsLoaded: false,
+      usersLoaded: false,
+
+      // 搜索和筛选
+      searchQuery: '',
+      statusFilter: '',
+      groupFilter: '',
+
+      // 分页
+      currentPage: 1,
+      pageSize: 10,
+      totalPages: 0,
+
+      // 显示模式：'list' 或 'group'
+      viewMode: 'list',
+
+      // 组展开状态
+      expandedGroups: {},
+
+      // 添加用户
+      showAddUserModal: false,
+      newUser: {
+        username: '',
+        full_name: '',
+        email: '',
+        phone: '',
+        password: '',
+        group_id: 2
+      },
+      addingUser: false,
+
+      // 编辑用户
+      showEditUserModal: false,
+      editingUser: {},
+      updatingUser: false,
+
+      // 重置密码
+      showResetPasswordModal: false,
+      resetPasswordUser: null,
+      newPassword: '',
+      resettingPassword: false,
+    }
   },
+
+  computed: {
+    paginatedUsers() {
+      if (this.viewMode === 'group') {
+        return this.filteredUsers;
+      }
+      const start = (this.currentPage - 1) * this.pageSize;
+      const end = start + this.pageSize;
+      return this.filteredUsers.slice(start, end);
+    },
+
+    // 修复：按组分组的用户列表
+    usersByGroup() {
+      console.log('计算usersByGroup，当前状态:', {
+        groupsLoaded: this.groupsLoaded,
+        usersLoaded: this.usersLoaded,
+        userGroups: this.userGroups,
+        groupsMap: this.groupsMap,
+        filteredUsers: this.filteredUsers
+      });
+
+      if (!this.groupsLoaded || !this.usersLoaded) {
+        console.log('数据未完全加载，返回空数组');
+        return [];
+      }
+
+      const grouped = {};
+
+      // 为所有已知的用户组创建空分组
+      this.userGroups.forEach(group => {
+        grouped[group.group_id] = {
+          groupId: group.group_id,
+          groupName: group.group_name,
+          users: [],
+          accessLevel: group.access_level || 1,
+          expanded: this.expandedGroups[group.group_id] !== false,
+          description: group.description || ''
+        };
+      });
+
+      // 创建"未分组"组
+      grouped['unassigned'] = {
+        groupId: 'unassigned',
+        groupName: '未分组',
+        users: [],
+        accessLevel: 0,
+        expanded: this.expandedGroups['unassigned'] !== false,
+        description: '没有分配用户组的用户'
+      };
+
+      // 将用户分配到对应的组中
+      this.filteredUsers.forEach(user => {
+        // 修复：从用户数据中正确获取group_id
+        let groupId = null;
+
+        // 首先尝试从user.group_id获取
+        if (user.group_id && user.group_id !== 0) {
+          groupId = parseInt(user.group_id);
+        }
+        // 如果没有group_id，尝试从group_name推断
+        else if (user.group_name) {
+          // 根据group_name查找对应的group_id
+          const matchedGroup = this.userGroups.find(g => g.group_name === user.group_name);
+          if (matchedGroup) {
+            groupId = matchedGroup.group_id;
+          }
+        }
+
+        // 如果还是没有找到，设为未分组
+        if (!groupId) {
+          groupId = 'unassigned';
+        }
+
+        console.log(`用户 ${user.username} 的组ID: ${groupId} (原始: ${user.group_id}, 组名: ${user.group_name})`);
+
+        if (grouped[groupId]) {
+          grouped[groupId].users.push(user);
+        } else {
+          console.warn(`用户 ${user.username} 的用户组 ${groupId} 不存在，添加到未分组`);
+          grouped['unassigned'].users.push(user);
+        }
+      });
+
+      // 过滤掉没有用户的组（可选）
+      const nonEmptyGroups = Object.values(grouped).filter(group => group.users.length > 0);
+
+      // 按权限级别排序（管理员组在前）
+      const sortedGroups = nonEmptyGroups.sort((a, b) => {
+        return (b.accessLevel || 0) - (a.accessLevel || 0);
+      });
+
+      console.log('计算完成的分组数据:', sortedGroups);
+      return sortedGroups;
+    },
+
+    // 统计信息
+    groupStats() {
+      if (!this.groupsLoaded || !this.usersLoaded) {
+        return {};
+      }
+
+      const stats = {};
+
+      // 初始化所有用户组的统计
+      this.userGroups.forEach(group => {
+        stats[group.group_id] = {
+          groupName: group.group_name,
+          total: 0,
+          active: 0,
+          inactive: 0
+        };
+      });
+
+      // 添加未分组统计
+      stats['unassigned'] = {
+        groupName: '未分组',
+        total: 0,
+        active: 0,
+        inactive: 0
+      };
+
+      // 统计用户
+      this.filteredUsers.forEach(user => {
+        // 修复：正确获取用户的组ID
+        let groupId = null;
+
+        if (user.group_id && user.group_id !== 0) {
+          groupId = parseInt(user.group_id);
+        } else if (user.group_name) {
+          const matchedGroup = this.userGroups.find(g => g.group_name === user.group_name);
+          if (matchedGroup) {
+            groupId = matchedGroup.group_id;
+          }
+        }
+
+        if (!groupId) {
+          groupId = 'unassigned';
+        }
+
+        if (!stats[groupId]) {
+          stats[groupId] = {
+            groupName: this.getGroupName(groupId),
+            total: 0,
+            active: 0,
+            inactive: 0
+          };
+        }
+
+        stats[groupId].total++;
+        if (user.status === 1) {
+          stats[groupId].active++;
+        } else {
+          stats[groupId].inactive++;
+        }
+      });
+
+      return stats;
+    }
+  },
+
   async mounted() {
-    await this.checkPermissionAndLoad();
+    console.log('组件挂载，开始初始化');
+    await this.checkPermissions();
+    if (this.hasPermission) {
+      // 确保按顺序加载，用户组先加载完成后再加载用户
+      await this.loadUserGroups();
+      await this.loadUsers();
+    }
   },
+
   methods: {
-    async checkPermissionAndLoad() {
-      // 检查用户是否已登录并获取用户信息
-      const loginResult = await this.checkLoginStatus();
-      if (!loginResult) {
+    // 检查用户权限
+    async checkPermissions() {
+      const token = localStorage.getItem('token');
+      const currentUser = localStorage.getItem('currentUser');
+
+      if (!token || !currentUser) {
+        this.hasPermission = false;
         this.isAuthError = true;
-        this.error = '请先登录';
         return;
       }
 
-      // 使用与HomePage.vue相同的权限检查逻辑
-      this.hasPermission = this.canViewUsers();
-
-      if (this.hasPermission) {
-        await this.loadUsers();
-      }
-    },
-
-    async checkLoginStatus() {
       try {
-        // 检查所有可能的token存储位置
-        const token = this.findToken();
-        
-        if (!token) {
-          return false;
-        }
+        const user = JSON.parse(currentUser);
+        this.currentUserId = user.user_id;
 
-        console.log('找到Token，正在验证用户身份...');
-
-        // 验证token并获取用户信息
-        const response = await axios.get('/api/profile', {
+        const response = await fetch('/api/profile', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
 
-        console.log('用户信息获取成功:', response.data);
-
-        if (response.data && response.data.profile) {
-          this.userInfo = response.data.profile;
-          
-          // 确保token存储在标准位置
-          localStorage.setItem('token', token);
-          
-          console.log('用户登录状态已确认:', this.userInfo);
-          return true;
+        if (response.ok) {
+          const data = await response.json();
+          this.hasPermission = true;
+          this.hasAdminPermission = data.profile.access_level >= 5;
         } else {
-          throw new Error('用户信息格式错误');
+          this.hasPermission = false;
+          this.isAuthError = true;
         }
+      } catch (error) {
+        console.error('权限检查失败:', error);
+        this.hasPermission = false;
+        this.isAuthError = true;
+      }
+    },
+
+    // 修复：优化用户组加载逻辑
+    async loadUserGroups() {
+      console.log('开始加载用户组数据');
+      this.groupsLoaded = false;
+
+      try {
+        const token = localStorage.getItem('token');
+
+        // 使用正确的API端点
+        const response = await fetch('/api/groups', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('用户组API返回数据:', data);
+
+          // 处理返回的数据格式
+          let groups = [];
+          if (Array.isArray(data)) {
+            groups = data;
+          } else if (data.groups && Array.isArray(data.groups)) {
+            groups = data.groups;
+          } else if (data.data && Array.isArray(data.data)) {
+            groups = data.data;
+          } else {
+            console.warn('用户组数据格式异常:', data);
+            groups = [];
+          }
+
+          // 标准化用户组数据格式
+          this.userGroups = groups.map(group => ({
+            group_id: parseInt(group.group_id || group.id),
+            group_name: group.group_name || group.name || '未知组',
+            description: group.description || '',
+            access_level: parseInt(group.access_level || 1),
+            created_at: group.created_at,
+            updated_at: group.updated_at
+          }));
+
+          console.log('处理后的用户组数据:', this.userGroups);
+
+        } else if (response.status === 404) {
+          console.warn('用户组API不存在，使用默认数据');
+          this.userGroups = this.getDefaultGroups();
+        } else {
+          console.error('加载用户组失败，状态码:', response.status);
+          this.userGroups = this.getDefaultGroups();
+        }
+
+        // 如果没有获取到任何用户组，使用默认组
+        if (!this.userGroups || this.userGroups.length === 0) {
+          console.warn('未获取到用户组数据，使用默认用户组');
+          this.userGroups = this.getDefaultGroups();
+        }
+
+        // 创建映射表并设置加载完成标志
+        this.createGroupsMap();
+        this.groupsLoaded = true;
+
+        console.log('用户组加载完成:', {
+          groups: this.userGroups,
+          map: this.groupsMap
+        });
 
       } catch (error) {
-        console.error('检查登录状态失败:', error);
-        
-        if (error.response?.status === 401) {
-          // Token过期或无效
-          this.clearAuthData();
-        }
-        
-        return false;
+        console.error('加载用户组异常:', error);
+        this.userGroups = this.getDefaultGroups();
+        this.createGroupsMap();
+        this.groupsLoaded = true;
       }
     },
 
-    findToken() {
-      // 检查所有可能的token存储位置
-      const possibleKeys = [
-        'token',
-        'authToken', 
-        'accessToken',
-        'access_token',
-        'jwt_token',
-        'bearer_token',
-        'auth_token'
+    // 获取默认用户组
+    getDefaultGroups() {
+      return [
+        {
+          group_id: 1,
+          group_name: '管理员',
+          description: '系统管理员组，拥有所有权限',
+          access_level: 10
+        },
+        {
+          group_id: 2,
+          group_name: '普通用户',
+          description: '普通用户组，基础权限',
+          access_level: 1
+        },
+        {
+          group_id: 3,
+          group_name: '访客',
+          description: '访客用户组，只读权限',
+          access_level: 0
+        }
       ];
-
-      // 优先检查localStorage
-      for (const key of possibleKeys) {
-        const token = localStorage.getItem(key);
-        if (token) {
-          console.log(`在localStorage.${key}中找到token`);
-          return token;
-        }
-      }
-
-      // 再检查sessionStorage
-      for (const key of possibleKeys) {
-        const token = sessionStorage.getItem(key);
-        if (token) {
-          console.log(`在sessionStorage.${key}中找到token`);
-          return token;
-        }
-      }
-
-      return null;
     },
 
-    // 使用与HomePage.vue相同的权限检查逻辑
-    canViewUsers() {
-      if (!this.userInfo) return false;
-      
-      // 管理员权限检查：优先检查组名，然后检查权限等级
-      return (
-        // 优先检查组名是否为管理员
-        (this.userInfo.group_name && (
-          this.userInfo.group_name.includes('管理员') || 
-          this.userInfo.group_name.toLowerCase().includes('admin')
-        )) ||
-        // 检查角色字段
-        (this.userInfo.role && this.userInfo.role.includes('admin')) ||
-        // 最后检查权限等级（可能需要调整阈值）
-        (this.userInfo.access_level && this.userInfo.access_level >= 3)
-      );
+    // 创建用户组映射表
+    createGroupsMap() {
+      this.groupsMap = {};
+      if (this.userGroups && this.userGroups.length > 0) {
+        this.userGroups.forEach(group => {
+          this.groupsMap[group.group_id] = {
+            name: group.group_name,
+            access_level: group.access_level,
+            description: group.description
+          };
+        });
+      }
+      console.log('创建用户组映射表:', this.groupsMap);
     },
 
+    // 修复：加载用户列表时正确处理group_id
     async loadUsers() {
-      // 再次检查token
-      const token = this.findToken();
-      if (!token) {
-        this.isAuthError = true;
-        this.error = 'Token已失效，请重新登录';
-        return;
-      }
-
+      console.log('开始加载用户数据');
       this.loading = true;
       this.error = null;
-      this.isAuthError = false;
-      
+      this.usersLoaded = false;
+
       try {
-        console.log('开始加载用户列表...');
-        
-        // 直接使用axios调用API
-        const response = await axios.get('/api/users', {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/users', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
-        
-        console.log('API响应:', response);
-        
-        // 处理不同的响应格式
-        if (response.data.success === false) {
-          throw new Error(response.data.message || '获取用户列表失败');
-        }
-        
-        // 提取用户数据
-        if (response.data.success === true && response.data.data) {
-          this.users = Array.isArray(response.data.data) ? response.data.data : [response.data.data];
-        } else if (Array.isArray(response.data)) {
-          this.users = response.data;
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('用户API返回数据:', data);
+
+          // 处理用户数据，修复group_id字段
+          this.users = Array.isArray(data) ? data.map(user => {
+            // 修复：正确处理group_id
+            let groupId = null;
+
+            // 优先使用group_id字段
+            if (user.group_id && user.group_id !== 0) {
+              groupId = parseInt(user.group_id);
+            }
+            // 如果没有group_id，尝试从group_name推断
+            else if (user.group_name && this.groupsLoaded) {
+              const matchedGroup = this.userGroups.find(g => g.group_name === user.group_name);
+              if (matchedGroup) {
+                groupId = matchedGroup.group_id;
+              }
+            }
+
+            return {
+              ...user,
+              group_id: groupId,
+              status: parseInt(user.status || 1)
+            };
+          }) : [];
+
+          console.log('处理后的用户数据:', this.users);
+          this.usersLoaded = true;
+          this.filterUsers();
+
+        } else if (response.status === 401) {
+          this.error = '认证失败，请重新登录';
+          this.isAuthError = true;
         } else {
-          this.users = response.data.users || [];
+          this.error = '加载用户列表失败';
         }
-        
-        console.log('用户列表加载完成:', this.users);
-        
       } catch (error) {
-        console.error('获取用户列表错误:', error);
-        this.handleError(error);
+        console.error('加载用户列表失败:', error);
+        this.error = '网络错误，请检查网络连接';
       } finally {
         this.loading = false;
       }
     },
 
-    handleError(error) {
-      let errorMessage = '获取用户列表失败';
-      
-      if (error.response) {
-        const status = error.response.status;
-        const data = error.response.data;
-        
-        console.log('错误响应:', { status, data });
-        
-        if (status === 401) {
-          this.isAuthError = true;
-          errorMessage = data?.message || '登录已过期，请重新登录';
-          // 清除过期的认证信息
-          this.clearAuthData();
-        } else if (status === 403) {
-          errorMessage = data?.message || '没有权限查看用户列表';
-          this.hasPermission = false;
-        } else if (status === 500) {
-          errorMessage = '服务器内部错误，请稍后重试';
-        } else {
-          errorMessage = data?.message || `请求失败 (${status})`;
-        }
-      } else if (error.request) {
-        errorMessage = '无法连接到服务器，请检查网络连接';
-      } else {
-        errorMessage = error.message;
+    // 根据用户组ID获取用户组名称
+    getGroupName(groupId) {
+      if (!groupId || groupId === 'unassigned') return '未分组';
+
+      // 确保映射表已创建
+      if (!this.groupsMap || Object.keys(this.groupsMap).length === 0) {
+        this.createGroupsMap();
       }
-      
-      this.error = errorMessage;
+
+      const group = this.groupsMap[groupId];
+      return group ? group.name : `未知组(ID:${groupId})`;
     },
 
-    clearAuthData() {
-      // 清除所有可能的token存储
-      const possibleKeys = [
-        'token', 'authToken', 'accessToken', 'access_token', 
-        'jwt_token', 'bearer_token', 'auth_token'
-      ];
-      
-      possibleKeys.forEach(key => {
-        localStorage.removeItem(key);
-        sessionStorage.removeItem(key);
+    // 根据用户组ID获取权限级别
+    getGroupAccessLevel(groupId) {
+      if (!groupId || groupId === 'unassigned') return 0;
+
+      // 确保映射表已创建
+      if (!this.groupsMap || Object.keys(this.groupsMap).length === 0) {
+        this.createGroupsMap();
+      }
+
+      const group = this.groupsMap[groupId];
+      return group ? group.access_level : 0;
+    },
+
+    // 根据用户组ID获取权限级别描述
+    getAccessLevelDescription(groupId) {
+      const accessLevel = this.getGroupAccessLevel(groupId);
+
+      if (accessLevel >= 10) return '超级管理员';
+      if (accessLevel >= 5) return '管理员';
+      if (accessLevel >= 1) return '普通用户';
+      return '访客';
+    },
+
+    // 过滤用户
+    filterUsers() {
+      if (!this.usersLoaded) {
+        return;
+      }
+
+      let filtered = [...this.users];
+
+      // 搜索过滤
+      if (this.searchQuery) {
+        const query = this.searchQuery.toLowerCase();
+        filtered = filtered.filter(user =>
+          (user.username && user.username.toLowerCase().includes(query)) ||
+          (user.full_name && user.full_name.toLowerCase().includes(query)) ||
+          (user.email && user.email.toLowerCase().includes(query)) ||
+          this.getGroupName(user.group_id).toLowerCase().includes(query)
+        );
+      }
+
+      // 状态过滤
+      if (this.statusFilter !== '') {
+        filtered = filtered.filter(user => user.status == this.statusFilter);
+      }
+
+      // 用户组过滤
+      if (this.groupFilter) {
+        if (this.groupFilter === 'unassigned') {
+          filtered = filtered.filter(user => !user.group_id);
+        } else {
+          filtered = filtered.filter(user => user.group_id == this.groupFilter);
+        }
+      }
+
+      this.filteredUsers = filtered;
+      this.totalPages = Math.ceil(filtered.length / this.pageSize);
+      this.currentPage = 1;
+
+      console.log('过滤完成:', {
+        原始用户数: this.users.length,
+        过滤后用户数: this.filteredUsers.length,
+        搜索条件: this.searchQuery,
+        状态筛选: this.statusFilter,
+        组筛选: this.groupFilter
       });
-      
-      console.log('所有认证数据已清除');
     },
 
+    // 切换显示模式
+    toggleViewMode(mode) {
+      console.log('切换显示模式:', mode);
+      this.viewMode = mode;
+      this.currentPage = 1;
+    },
+
+    // 展开/折叠组
+    toggleGroup(groupId) {
+      console.log('切换组展开状态:', groupId);
+      this.$set(this.expandedGroups, groupId, !this.expandedGroups[groupId]);
+    },
+
+    // 检查组是否展开
+    isGroupExpanded(groupId) {
+      return this.expandedGroups[groupId] !== false; // 默认展开
+    },
+
+    // 显示成功消息
+    showSuccessMessage(message) {
+      if (this.$message) {
+        this.$message.success(message);
+      } else {
+        alert(message);
+      }
+    },
+
+    // 显示错误消息
+    showErrorMessage(message) {
+      if (this.$message) {
+        this.$message.error(message);
+      } else {
+        alert(message);
+      }
+    },
+
+    // 刷新数据
+    async refreshData() {
+      console.log('刷新数据');
+      this.groupsLoaded = false;
+      this.usersLoaded = false;
+      await this.loadUserGroups();
+      await this.loadUsers();
+    },
+
+    // 重置筛选
+    resetFilters() {
+      this.searchQuery = '';
+      this.statusFilter = '';
+      this.groupFilter = '';
+      this.filterUsers();
+    },
+
+    // 调试方法：打印当前状态
+    debugGroupData() {
+      console.log('=== 调试信息 ===');
+      console.log('groupsLoaded:', this.groupsLoaded);
+      console.log('usersLoaded:', this.usersLoaded);
+      console.log('userGroups:', this.userGroups);
+      console.log('groupsMap:', this.groupsMap);
+      console.log('users:', this.users);
+      console.log('filteredUsers:', this.filteredUsers);
+      console.log('usersByGroup:', this.usersByGroup);
+      console.log('expandedGroups:', this.expandedGroups);
+      console.log('viewMode:', this.viewMode);
+      console.log('===============');
+    },
+
+    // 测试用户组分组功能
+    testGroupFunction() {
+      console.log('测试用户组分组功能');
+      this.viewMode = 'group';
+      this.debugGroupData();
+
+      // 强制触发计算属性重新计算
+      this.$nextTick(() => {
+        console.log('nextTick后的usersByGroup:', this.usersByGroup);
+      });
+    },
+
+    // 添加用户相关方法
+    closeAddUserModal() {
+      this.showAddUserModal = false;
+      this.newUser = {
+        username: '',
+        full_name: '',
+        email: '',
+        phone: '',
+        password: '',
+        group_id: 2
+      };
+    },
+
+    async addUser() {
+      this.addingUser = true;
+
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/register', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(this.newUser)
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          this.showSuccessMessage('用户添加成功');
+          this.closeAddUserModal();
+          await this.loadUsers();
+        } else {
+          this.showErrorMessage(data.message || '添加用户失败');
+        }
+      } catch (error) {
+        console.error('添加用户失败:', error);
+        this.showErrorMessage('网络错误，请重试');
+      } finally {
+        this.addingUser = false;
+      }
+    },
+
+    // 编辑用户相关方法
+    editUser(user) {
+      this.editingUser = { ...user };
+      this.showEditUserModal = true;
+    },
+
+    closeEditUserModal() {
+      this.showEditUserModal = false;
+      this.editingUser = {};
+    },
+
+    async updateUser() {
+      this.updatingUser = true;
+
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/users/${this.editingUser.user_id}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            full_name: this.editingUser.full_name,
+            email: this.editingUser.email,
+            phone: this.editingUser.phone,
+            group_id: this.editingUser.group_id,
+            status: this.editingUser.status
+          })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          this.showSuccessMessage('用户信息更新成功');
+          this.closeEditUserModal();
+          await this.loadUsers();
+        } else {
+          this.showErrorMessage(data.message || '更新用户信息失败');
+        }
+      } catch (error) {
+        console.error('更新用户失败:', error);
+        this.showErrorMessage('网络错误，请重试');
+      } finally {
+        this.updatingUser = false;
+      }
+    },
+
+    // 重置密码相关方法
+    resetPassword(user) {
+      this.resetPasswordUser = user;
+      this.newPassword = '';
+      this.showResetPasswordModal = true;
+    },
+
+    closeResetPasswordModal() {
+      this.showResetPasswordModal = false;
+      this.resetPasswordUser = null;
+      this.newPassword = '';
+    },
+
+    async confirmResetPassword() {
+      this.resettingPassword = true;
+
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/users/${this.resetPasswordUser.user_id}/change-password`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            new_password: this.newPassword
+          })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          this.showSuccessMessage('密码重置成功');
+          this.closeResetPasswordModal();
+        } else {
+          this.showErrorMessage(data.message || '密码重置失败');
+        }
+      } catch (error) {
+        console.error('重置密码失败:', error);
+        this.showErrorMessage('网络错误，请重试');
+      } finally {
+        this.resettingPassword = false;
+      }
+    },
+
+    // 切换用户状态
+    async toggleUserStatus(user) {
+      const newStatus = user.status === 1 ? 0 : 1;
+      const action = newStatus === 1 ? '启用' : '禁用';
+
+      if (!confirm(`确定要${action}用户 ${user.full_name} 吗？`)) {
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/users/${user.user_id}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            status: newStatus
+          })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          this.showSuccessMessage(`用户${action}成功`);
+          await this.loadUsers();
+        } else {
+          this.showErrorMessage(data.message || `${action}用户失败`);
+        }
+      } catch (error) {
+        console.error(`${action}用户失败:`, error);
+        this.showErrorMessage('网络错误，请重试');
+      }
+    },
+
+    // 删除用户
+    async deleteUser(user) {
+      if (!confirm(`确定要删除用户 ${user.full_name} 吗？此操作不可恢复！`)) {
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/users/${user.user_id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          this.showSuccessMessage('用户删除成功');
+          await this.loadUsers();
+        } else {
+          this.showErrorMessage(data.message || '删除用户失败');
+        }
+      } catch (error) {
+        console.error('删除用户失败:', error);
+        this.showErrorMessage('网络错误，请重试');
+      }
+    },
+
+    // 格式化日期
     formatDate(dateString) {
       if (!dateString) return '未知';
-      try {
-        const date = new Date(dateString);
-        return date.toLocaleString('zh-CN', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-      } catch (error) {
-        return dateString;
-      }
+      return new Date(dateString).toLocaleString('zh-CN');
+    },
+
+    // 格式化用户状态
+    formatStatus(status) {
+      return status === 1 ? '正常' : '禁用';
+    },
+
+    // 获取状态样式类
+    getStatusClass(status) {
+      return status === 1 ? 'status-active' : 'status-inactive';
     }
   }
-};
+}
