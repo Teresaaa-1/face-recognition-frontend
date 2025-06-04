@@ -104,7 +104,7 @@
       <div class="no-records-icon">📋</div>
       <h3>暂无打卡记录</h3>
       <p>{{ selectedDate ? '选择的日期没有打卡记录' : '还没有任何打卡记录' }}</p>
-      <button @click="goToClockIn" class="clock-btn">去打卡</button>
+      <button @click="goToClockIn" class="clock-btn">回到首页</button>
     </div>
 
     <!-- 返回按钮 -->
