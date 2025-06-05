@@ -274,10 +274,6 @@
     </div>
   </div>
 </template>
-<<<<<<< HEAD
-=======
-
->>>>>>> 0f75df28f45260e946161650e2b743e436e63620
 <script>
 import userpage from "../webmanage/js/userpage/userpage";
     export default userpage;
