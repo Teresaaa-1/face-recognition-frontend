@@ -230,41 +230,116 @@ export default {
 
   methods: {
     // 检查用户权限
-    async checkPermissions() {
-      const token = localStorage.getItem('token');
-      const currentUser = localStorage.getItem('currentUser');
+async checkPermissions() {
+  console.log('开始权限检查...');
+  
+  const token = localStorage.getItem('token');
+  let currentUser = localStorage.getItem('currentUser');
 
-      if (!token || !currentUser) {
+  console.log('Token存在:', !!token);
+  console.log('CurrentUser存在:', !!currentUser);
+
+  if (!token) {
+    console.log('缺少Token');
+    this.hasPermission = false;
+    this.isAuthError = true;
+    return;
+  }
+
+  // 如果本地没有用户信息，先通过API获取
+  if (!currentUser) {
+    console.log('本地没有用户信息，通过API获取...');
+    try {
+      const response = await fetch('/api/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Profile API返回数据:', data);
+        
+        if (data.success && data.profile) {
+          // 将用户信息保存到localStorage
+          currentUser = JSON.stringify(data.profile);
+          localStorage.setItem('currentUser', currentUser);
+          console.log('用户信息已保存到localStorage');
+        }
+      } else {
+        console.log('获取用户信息失败，状态码:', response.status);
         this.hasPermission = false;
         this.isAuthError = true;
         return;
       }
+    } catch (error) {
+      console.error('获取用户信息异常:', error);
+      this.hasPermission = false;
+      this.isAuthError = true;
+      return;
+    }
+  }
 
-      try {
-        const user = JSON.parse(currentUser);
-        this.currentUserId = user.user_id;
+  // 现在处理用户信息
+  try {
+    const user = JSON.parse(currentUser);
+    console.log('当前用户信息:', user);
+    this.currentUserId = user.user_id;
 
-        const response = await fetch('/api/profile', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          this.hasPermission = true;
-          this.hasAdminPermission = data.profile.access_level >= 5;
-        } else {
-          this.hasPermission = false;
-          this.isAuthError = true;
-        }
-      } catch (error) {
-        console.error('权限检查失败:', error);
-        this.hasPermission = false;
-        this.isAuthError = true;
+    // 获取权限级别
+    let accessLevel = 0;
+    if (user.access_level !== undefined) {
+      accessLevel = parseInt(user.access_level);
+      console.log('从用户信息获取权限级别:', accessLevel);
+    } else {
+      console.log('用户信息中没有access_level，尝试其他方式判断...');
+      
+      // 根据用户组判断
+      if (user.group_name === '管理员' || user.group_id === 1) {
+        accessLevel = 10;
+        console.log('根据用户组判断为管理员，设置权限级别为10');
+      } else if (user.username === 'admin') {
+        accessLevel = 10;
+        console.log('根据用户名判断为管理员，设置权限级别为10');
+      } else {
+        accessLevel = 1;
+        console.log('判断为普通用户，设置权限级别为1');
       }
-    },
+    }
+
+    this.hasPermission = true;
+    this.hasAdminPermission = accessLevel >= 5;
+    
+    console.log('权限检查完成:', {
+      hasPermission: this.hasPermission,
+      hasAdminPermission: this.hasAdminPermission,
+      accessLevel: accessLevel
+    });
+
+  } catch (parseError) {
+    console.error('解析用户信息失败:', parseError);
+    this.hasPermission = false;
+    this.isAuthError = true;
+  }
+},
+debugAuth() {
+  console.log('=== 认证调试信息 ===');
+  console.log('Token:', localStorage.getItem('token'));
+  console.log('CurrentUser:', localStorage.getItem('currentUser'));
+  console.log('hasPermission:', this.hasPermission);
+  console.log('hasAdminPermission:', this.hasAdminPermission);
+  console.log('isAuthError:', this.isAuthError);
+  console.log('currentUserId:', this.currentUserId);
+  
+  try {
+    const user = JSON.parse(localStorage.getItem('currentUser'));
+    console.log('解析的用户信息:', user);
+  } catch (e) {
+    console.log('用户信息解析失败:', e);
+  }
+  console.log('==================');
+},
 
     // 修复：优化用户组加载逻辑
     async loadUserGroups() {
