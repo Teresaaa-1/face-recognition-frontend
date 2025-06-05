@@ -1,4 +1,4 @@
-// 修复后的用户管理页面JavaScript逻辑
+// 修复用户状态显示问题的完整用户管理页面JavaScript逻辑
 export default {
   name: 'UsersPage',
   data() {
@@ -207,7 +207,8 @@ export default {
         }
 
         stats[groupId].total++;
-        if (user.status === 1) {
+        // 修复：确保status比较正确
+        if (parseInt(user.status) === 1) {
           stats[groupId].active++;
         } else {
           stats[groupId].inactive++;
@@ -323,6 +324,7 @@ export default {
         this.isAuthError = true;
       }
     },
+
     debugAuth() {
       console.log('=== 认证调试信息 ===');
       console.log('Token:', localStorage.getItem('token'));
@@ -456,7 +458,7 @@ export default {
       console.log('创建用户组映射表:', this.groupsMap);
     },
 
-    // 修复：加载用户列表时正确处理group_id
+    // 修复：加载用户列表时正确处理status字段
     async loadUsers() {
       console.log('开始加载用户数据');
       this.loading = true;
@@ -476,27 +478,35 @@ export default {
           const data = await response.json();
           console.log('用户API返回数据:', data);
 
-          // 处理用户数据，修复group_id字段
+          // 修复：正确处理用户数据，确保status和group_id字段正确
           this.users = Array.isArray(data) ? data.map(user => {
             // 修复：正确处理group_id
             let groupId = null;
-
-            // 优先使用group_id字段
             if (user.group_id && user.group_id !== 0) {
               groupId = parseInt(user.group_id);
-            }
-            // 如果没有group_id，尝试从group_name推断
-            else if (user.group_name && this.groupsLoaded) {
+            } else if (user.group_name && this.groupsLoaded) {
               const matchedGroup = this.userGroups.find(g => g.group_name === user.group_name);
               if (matchedGroup) {
                 groupId = matchedGroup.group_id;
               }
             }
 
+            // 修复：确保status字段正确转换为数字类型
+            let status = 1; // 默认为正常状态
+            if (user.status !== undefined && user.status !== null) {
+              status = parseInt(user.status);
+              // 确保status只能是0或1
+              if (status !== 0 && status !== 1) {
+                status = 1;
+              }
+            }
+
+            console.log(`用户 ${user.username} 状态处理: 原始=${user.status}, 处理后=${status}, 类型=${typeof status}`);
+
             return {
               ...user,
               group_id: groupId,
-              status: parseInt(user.status || 1)
+              status: status // 确保status是数字类型
             };
           }) : [];
 
@@ -573,9 +583,10 @@ export default {
         );
       }
 
-      // 状态过滤
+      // 状态过滤 - 修复：确保状态比较正确
       if (this.statusFilter !== '') {
-        filtered = filtered.filter(user => user.status == this.statusFilter);
+        const filterStatus = parseInt(this.statusFilter);
+        filtered = filtered.filter(user => parseInt(user.status) === filterStatus);
       }
 
       // 用户组过滤
@@ -666,6 +677,17 @@ export default {
       console.log('expandedGroups:', this.expandedGroups);
       console.log('viewMode:', this.viewMode);
       console.log('===============');
+    },
+
+    // 调试用户状态
+    debugUserStatus(user) {
+      console.log('用户状态调试信息:', {
+        user_id: user.user_id,
+        username: user.username,
+        status: user.status,
+        status_type: typeof user.status,
+        原始数据: user
+      });
     },
 
     // 测试用户组分组功能
@@ -817,10 +839,13 @@ export default {
       }
     },
 
-    // 切换用户状态
+    // 修复：切换用户状态 - 确保状态更新正确
     async toggleUserStatus(user) {
-      const newStatus = user.status === 1 ? 0 : 1;
+      const currentStatus = parseInt(user.status);
+      const newStatus = currentStatus === 1 ? 0 : 1;
       const action = newStatus === 1 ? '启用' : '禁用';
+
+      console.log(`准备${action}用户 ${user.username}, 当前状态: ${currentStatus}, 新状态: ${newStatus}`);
 
       if (!confirm(`确定要${action}用户 ${user.full_name} 吗？`)) {
         return;
@@ -843,7 +868,25 @@ export default {
 
         if (response.ok) {
           this.showSuccessMessage(`用户${action}成功`);
-          await this.loadUsers();
+
+          // 修复：立即更新本地数据，避免重新加载
+          const userIndex = this.users.findIndex(u => u.user_id === user.user_id);
+          if (userIndex !== -1) {
+            // 使用Vue的响应式更新
+            this.$set(this.users, userIndex, {
+              ...this.users[userIndex],
+              status: newStatus,
+              updated_at: new Date().toISOString()
+            });
+
+            console.log(`用户 ${user.username} 状态已更新为: ${newStatus}`);
+
+            // 重新过滤数据以更新显示
+            this.filterUsers();
+          }
+
+          // 可选：如果需要确保数据同步，也可以重新加载
+          // await this.loadUsers();
         } else {
           this.showErrorMessage(data.message || `${action}用户失败`);
         }
@@ -889,14 +932,18 @@ export default {
       return new Date(dateString).toLocaleString('zh-CN');
     },
 
-    // 格式化用户状态
+    // 修复：格式化用户状态 - 确保类型转换正确
     formatStatus(status) {
-      return status === 1 ? '正常' : '禁用';
+      // 确保status是数字类型
+      const numStatus = parseInt(status);
+      return numStatus === 1 ? '正常' : '禁用';
     },
 
-    // 获取状态样式类
+    // 修复：获取状态样式类 - 确保类型转换正确
     getStatusClass(status) {
-      return status === 1 ? 'status-active' : 'status-inactive';
+      // 确保status是数字类型
+      const numStatus = parseInt(status);
+      return numStatus === 1 ? 'status-active' : 'status-inactive';
     }
   }
 }
